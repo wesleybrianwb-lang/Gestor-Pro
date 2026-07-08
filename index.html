@@ -1002,15 +1002,15 @@
                                         <template v-if="editandoSaida !== item">
                                             <td>{{ item.categoria }}</td>
                                             <td>{{ item.observacao }}</td>
-                                            <td><input type="number" step="0.01" v-model.number="item.valor" class="input-inline"></td>
+                                            <td><input type="number" step="0.01" v-model.number="item.valor" class="input-inline" style="width: 140px;"></td>
                                             <td>{{ item.forma }}</td>
                                             <td>{{ item.cartaoCredito || '---' }}</td>
                                             <td>{{ item.parcela || '---' }}</td>
                                             <td>{{ formatDate(item.dataVencimento) }}</td>
                                             <td><input type="date" v-model="item.dataPagamento" class="input-inline"></td>
                                             <td><span class="status-badge" :class="statusClasse(item)">{{ getStatus(item) }}</span></td>
-                                            <td>{{ getMes(item.dataVencimento) }}</td>
-                                            <td>{{ getAno(item.dataVencimento) }}</td>
+                                            <td>{{ getMesSaida(item) }}</td>
+                                            <td>{{ getAnoSaida(item) }}</td>
                                             <td>
                                                 <div class="acoes-edicao">
                                                     <button class="btn btn-sm" @click="iniciarEdicaoSaida(item)" title="Editar">✏️</button>
@@ -1027,7 +1027,7 @@
                                                 </select>
                                             </td>
                                             <td><input type="text" v-model="item.observacao" class="input-inline-full"></td>
-                                            <td><input type="number" step="0.01" v-model.number="item.valor" class="input-inline-full" style="min-width:90px;"></td>
+                                            <td><input type="number" step="0.01" v-model.number="item.valor" class="input-inline-full" style="min-width:140px;"></td>
                                             <td>
                                                 <select v-model="item.forma" class="input-inline-full">
                                                     <option value="">--</option>
@@ -1044,8 +1044,8 @@
                                             <td><input type="date" v-model="item.dataVencimento" class="input-inline-full"></td>
                                             <td><input type="date" v-model="item.dataPagamento" class="input-inline-full"></td>
                                             <td><span class="status-badge" :class="statusClasse(item)">{{ getStatus(item) }}</span></td>
-                                            <td>{{ getMes(item.dataVencimento) }}</td>
-                                            <td>{{ getAno(item.dataVencimento) }}</td>
+                                            <td>{{ getMesSaida(item) }}</td>
+                                            <td>{{ getAnoSaida(item) }}</td>
                                             <td>
                                                 <div class="acoes-edicao">
                                                     <button class="btn btn-primary btn-sm" @click="confirmarEdicaoSaida()" title="Salvar">✅</button>
@@ -1058,6 +1058,13 @@
                                         <td colspan="12" style="text-align: center; color: var(--text-muted);">Nenhum registro encontrado.</td>
                                     </tr>
                                 </tbody>
+                                <tfoot v-if="saidasFiltradas.length > 0">
+                                    <tr style="font-weight: 700;">
+                                        <td colspan="2" style="text-align: right; background-color: var(--total-row-first-bg);">Total:</td>
+                                        <td style="background-color: var(--total-row-bg);">{{ formatCurrency(totalValorSaidas) }}</td>
+                                        <td colspan="9" style="background-color: var(--total-row-bg);"></td>
+                                    </tr>
+                                </tfoot>
                             </table>
                         </div>
                     </div>
@@ -1096,15 +1103,26 @@
                         <div class="table-container">
                             <table>
                                 <thead>
-                                    <tr><th>Data</th><th>Operação</th><th>Tipo</th><th>Origem</th><th>Valor</th><th>Observações</th><th>Ação</th></tr>
+                                    <tr><th>Data</th><th>Mês</th><th>Operação</th><th>Tipo</th><th>Origem</th><th>Valor</th><th>Observações</th><th>Ação</th></tr>
+                                    <tr class="filter-row">
+                                        <th></th>
+                                        <th><select v-model="filtrosInvest.mes" class="filter-input"><option value="">Todos</option><option v-for="opt in opcoesFiltroInvest('mes')" :key="opt" :value="opt">{{ opt }}</option></select></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                        <th></th>
+                                    </tr>
                                 </thead>
                                 <tbody>
-                                    <tr v-for="(item, idx) in db.investimentos" :key="idx"
+                                    <tr v-for="(item, idx) in investimentosFiltrados" :key="idx"
                                         :class="{ 'linha-editando': editandoInvest === item }">
 
                                         <!-- MODO VISUALIZAÇÃO -->
                                         <template v-if="editandoInvest !== item">
                                             <td>{{ formatDate(item.data) }}</td>
+                                            <td>{{ getMes(item.data) }}</td>
                                             <td><span style="font-weight: bold;" :style="{'color': item.operacao === 'Retirada' ? 'var(--danger)' : 'var(--success)'}">{{ item.operacao || 'Aporte' }}</span></td>
                                             <td>{{ item.tipo }}</td>
                                             <td>{{ item.origem }}</td>
@@ -1113,7 +1131,7 @@
                                             <td>
                                                 <div class="acoes-edicao">
                                                     <button class="btn btn-sm" @click="iniciarEdicaoInvest(item)" title="Editar">✏️</button>
-                                                    <button class="btn btn-danger btn-sm" @click="excluirInvestimento(idx)">🗑️</button>
+                                                    <button class="btn btn-danger btn-sm" @click="excluirInvestimento(item)">🗑️</button>
                                                 </div>
                                             </td>
                                         </template>
@@ -1121,6 +1139,7 @@
                                         <!-- MODO EDIÇÃO -->
                                         <template v-else>
                                             <td><input type="date" v-model="item.data" class="input-inline-full"></td>
+                                            <td>{{ getMes(item.data) }}</td>
                                             <td>
                                                 <select v-model="item.operacao" class="input-inline-full">
                                                     <option value="Aporte">Aporte</option>
@@ -1145,8 +1164,8 @@
                                             </td>
                                         </template>
                                     </tr>
-                                    <tr v-if="db.investimentos.length === 0">
-                                        <td colspan="7" style="text-align: center; color: var(--text-muted);">Nenhum registro encontrado.</td>
+                                    <tr v-if="investimentosFiltrados.length === 0">
+                                        <td colspan="8" style="text-align: center; color: var(--text-muted);">Nenhum registro encontrado.</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -1725,6 +1744,7 @@
                 sortEstadoEntrada: { key: '', order: 1 },
                 filtrosSaida: { categoria: '', observacao: '', valor: '', forma: '', cartaoCredito: '', parcela: '', dataVencimento: '', dataPagamento: '', status: '', mes: '', ano: '' },
                 sortEstadoSaida: { key: '', order: 1 },
+                filtrosInvest: { mes: '' },
 
                 // Formulários de Entrada de Dados Operacionais
                 formEntrada: { categoria: '', observacao: '', valor: 0, forma: '', tipoLancamento: 'ÚNICO', parcelas: 1, dataVencimento: '', dataPagamento: '' },
@@ -1793,8 +1813,8 @@
                     if (termo) {
                         result = result.filter(item => {
                             let valStr = '';
-                            if (key === 'mes') valStr = String(this.getMes(item.dataVencimento));
-                            else if (key === 'ano') valStr = String(this.getAno(item.dataVencimento));
+                            if (key === 'mes') valStr = String(this.getMesSaida(item));
+                            else if (key === 'ano') valStr = String(this.getAnoSaida(item));
                             else if (key === 'status') valStr = this.getStatus(item);
                             else if (key === 'dataVencimento' || key === 'dataPagamento') valStr = this.formatDate(item[key]);
                             else valStr = String(item[key] || '');
@@ -1805,13 +1825,28 @@
                 if (this.sortEstadoSaida.key) {
                     const sk = this.sortEstadoSaida.key; const order = this.sortEstadoSaida.order;
                     result = result.slice().sort((a, b) => {
-                        let valA = (sk === 'mes') ? this.getMes(a.dataVencimento) : ((sk === 'ano') ? this.getAno(a.dataVencimento) : ((sk === 'status') ? this.getStatus(a) : a[sk]));
-                        let valB = (sk === 'mes') ? this.getMes(b.dataVencimento) : ((sk === 'ano') ? this.getAno(b.dataVencimento) : ((sk === 'status') ? this.getStatus(b) : b[sk]));
-                        if (typeof valA === 'string') valA = valA.toLowerCase(); if (typeof valB === 'string') valB = valB.toLowerCase();
+                        let valA = (sk === 'mes') ? this.getMesSaida(a) : ((sk === 'ano') ? this.getAnoSaida(a) : ((sk === 'status') ? this.getStatus(a) : a[sk]));
+                        let valB = (sk === 'mes') ? this.getMesSaida(b) : ((sk === 'ano') ? this.getAnoSaida(b) : ((sk === 'status') ? this.getStatus(b) : b[sk]));
                         if (!valA && valB) return -1 * order; if (valA && !valB) return 1 * order; if (!valA && !valB) return 0;
+                        if (sk === 'mes') { valA = this.monthNames.indexOf(valA); valB = this.monthNames.indexOf(valB); }
+                        else if (typeof valA === 'string') { valA = valA.toLowerCase(); if (typeof valB === 'string') valB = valB.toLowerCase(); }
                         if (sk === 'valor') { valA = Number(valA); valB = Number(valB); }
                         if (valA < valB) return -1 * order; if (valA > valB) return 1 * order; return 0;
                     });
+                }
+                return result;
+            },
+
+            // Total da coluna "Valor" refletindo as saídas atualmente filtradas na tabela
+            totalValorSaidas() {
+                return this.saidasFiltradas.reduce((acc, item) => acc + (Number(item.valor) || 0), 0);
+            },
+
+            // Filtro Dinâmico Tabela de Investimentos
+            investimentosFiltrados() {
+                let result = this.db.investimentos;
+                if (this.filtrosInvest.mes) {
+                    result = result.filter(item => this.getMes(item.data) === this.filtrosInvest.mes);
                 }
                 return result;
             }
@@ -1929,6 +1964,10 @@
             formatDate(dateStr) { if (!dateStr) return ''; const [y, m, d] = dateStr.split('-'); return `${d}/${m}/${y}`; },
             getMes(dateStr) { if (!dateStr) return ''; const d = new Date(dateStr + 'T00:00:00'); return this.monthNames[d.getMonth()]; },
             getAno(dateStr) { if (!dateStr) return ''; return dateStr.split('-')[0]; },
+            // Para Saídas: quando não há Data de Vencimento (ex: pagamentos em Pix, que dispensam vencimento),
+            // usa a Data de Pagamento como referência de Mês/Ano.
+            getMesSaida(item) { return this.getMes(item.dataVencimento || item.dataPagamento); },
+            getAnoSaida(item) { return this.getAno(item.dataVencimento || item.dataPagamento); },
             addMonths(dateStr, months) { const date = new Date(dateStr + 'T00:00:00'); date.setMonth(date.getMonth() + months); return date.toISOString().split('T')[0]; },
             getStatus(item) { return item.dataPagamento ? 'Realizado' : 'Previsto'; },
             statusClasse(item) { return item.dataPagamento ? 'status-concluido' : 'status-previsto'; },
@@ -2242,15 +2281,29 @@
             
             opcoesFiltroSaida(key) {
                 let arr = [];
-                if(key === 'mes') arr = this.db.saidas.map(i => this.getMes(i.dataVencimento));
-                else if(key === 'ano') arr = this.db.saidas.map(i => this.getAno(i.dataVencimento));
+                if(key === 'mes') arr = this.db.saidas.map(i => this.getMesSaida(i));
+                else if(key === 'ano') arr = this.db.saidas.map(i => this.getAnoSaida(i));
                 else if(key === 'status') arr = this.db.saidas.map(i => this.getStatus(i));
                 else if(key === 'dataVencimento' || key === 'dataPagamento') arr = this.db.saidas.map(i => this.formatDate(i[key]));
                 else arr = this.db.saidas.map(i => i[key]);
-                return [...new Set(arr.filter(v => v))].sort();
+                let opts = [...new Set(arr.filter(v => v))];
+                // Mês deve seguir a ordem cronológica (Jan, Fev, Mar...) e não a ordem alfabética
+                if (key === 'mes') opts.sort((a, b) => this.monthNames.indexOf(a) - this.monthNames.indexOf(b));
+                else opts.sort();
+                return opts;
             },
             sortSaidas(key) { if (this.sortEstadoSaida.key === key) this.sortEstadoSaida.order *= -1; else { this.sortEstadoSaida.key = key; this.sortEstadoSaida.order = 1; } },
             sortIconSaida(key) { if (this.sortEstadoSaida.key !== key) return '↕️'; return this.sortEstadoSaida.order > 0 ? '🔼' : '🔽'; },
+
+            opcoesFiltroInvest(key) {
+                let arr = [];
+                if(key === 'mes') arr = this.db.investimentos.map(i => this.getMes(i.data));
+                else arr = this.db.investimentos.map(i => i[key]);
+                let opts = [...new Set(arr.filter(v => v))];
+                if (key === 'mes') opts.sort((a, b) => this.monthNames.indexOf(a) - this.monthNames.indexOf(b));
+                else opts.sort();
+                return opts;
+            },
 
             // CONFIGURAÇÕES GERAIS DE AJUSTES
             toggleAllMonths(formObj, status) { formObj.mesesSelecionados = status ? [...this.monthNames] : []; },
@@ -2337,7 +2390,7 @@
             // LANÇAMENTOS OPERACIONAIS E EXCLUSÕES
             excluirEntrada(item) { if (confirm("Excluir permanentemente este lançamento?")) this.db.entradas = this.db.entradas.filter(e => e !== item); },
             excluirSaida(item) { if (confirm("Excluir permanentemente este lançamento?")) this.db.saidas = this.db.saidas.filter(s => s !== item); },
-            excluirInvestimento(idx) { if (confirm("Excluir permanentemente este lançamento de investimento?")) this.db.investimentos.splice(idx, 1); },
+            excluirInvestimento(item) { if (confirm("Excluir permanentemente este lançamento de investimento?")) this.db.investimentos = this.db.investimentos.filter(i => i !== item); },
 
             // Edição inline — Saídas
             iniciarEdicaoSaida(item) {
